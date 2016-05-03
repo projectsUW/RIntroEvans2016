@@ -1,2 +1,3 @@
 # RIntroEvans2016
-Materials for the SECOND session of workshop on Computational Tools for Public Management and Policy Making, introducing R.
+Code and Data introducing R.
+Materials for the SECOND session of the Workshop on Computational Tools for Public Management and Policy Making, presented at Evans School of Public Policy and Governance, Spring 2016.
