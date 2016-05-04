@@ -22,15 +22,19 @@ mydearObject # gone!
 # B.1. VECTOR: homogeneous elements----
 myFirstVectorEver=c(1,2,3)
 myFirstVectorEver
+
 mySecondVector=c("a","b","c")
 mySecondVector
+
 myThirdVector=c(1,2,m)
 myThirdVector #error
+
 myThirdVector=c(1,2,"m")
 myThirdVector #error?
 
 # accesing the vector:
 myFirstVectorEver[2]
+
 # altering the vector:
 myFirstVectorEver[2]=2000
 myFirstVectorEver
@@ -38,62 +42,82 @@ myFirstVectorEver
 # B.2. LIST: a flexible container ----
 myNewList=list(1,2,"3")
 myNewList
+
 myDataInList=list(name="Peter",age=3)
 myDataInList
+
+#check:
+myDataInList$name
+
+#compare:
 myDataInVector=c(name="Peter",age=3) 
 myDataInVector
+## pay attention:
+myDataInVector$name 
+myDataInVector["name"]
 
-# accessing the list:
+# Accessing the list:
 aList=list(1,2,3,c(1,2))
 aList[[1]] #notice double bracket
-aList[[1]]=11
+
+aList[[1]]=11 #replacing the value
+aList
+
 aList[[4]] # this is a vector
 aList[[4]][1] #getting a vector element
-myDataInList$name # if list has named fields
-myDataInVector$name # not here!!
-myDataInVector["name"] # Here it works!!
+
 
 # B.3. DATAFRAME ----
 
-# it is simple a list of vectors, the most similar to your Excel data: 
+# it is a list of vectors, the most similar to your Excel data: 
 
+#VECTORS
 names=c("Qing", "Françoise", "Raúl", "Bjork")
 ages=c(32,33,28,30)
 country=c("China", "Senegal", "Spain", "Norway")
 education=as.factor(c("Bach", "Bach", "Master", "PhD"))
 
+#"List" of vectors:
 students=data.frame(names,ages,country,education,stringsAsFactors=F)
-students
+
+students# Voilà
 
 # BASIC OPERATIONS ON A DATA FRAME:
-summary(students)
+summary(students) #any problem?
+
 mean(students$ages)
 
-students[1] # avoid this
-students[,1] # to get columns
-students[1,]
-students[1,1]
-students[2:3,]
+students[1] # avoid this to get columns
+students[,1] # column 1
+students[1,] # row 1
+students[1,1] # value in row 1 col 1
+students[2:3,] # rows 2 and 3
 
-# oldest?
+# oldest? (pay attention to the 'comma')
 students[which.max(ages),] # which.min available!
 
 #younger than average?
 average=mean(students$ages)
 students[ages<average,]
 
-#from Norway?
+#Not from Norway?
 students[country!="Norway",] 
 
 #from ...?
 DangeourousPlaces=c("Peru", "USA", "Spain")
-students[country==DangeourousPlaces,] # not realiable?
+students[country==DangeourousPlaces,] # not reliable?
 students[country %in% DangeourousPlaces,] # better
+students[!country %in% DangeourousPlaces,] # the opposite
 
 # C. Importing data:----
-library(haven)  # install it first
+#install.packahes("haven")  or use package manager.
+library(haven)  
 
-#get an spss file:
+# MAKE SURE YOU HAVE SET THE CURRENT FOLDER as your "Working Directory".
+#.....
+#.....
+
+#NOW get an SPSS file:
 testSpss= read_sav("data/PUMS_527.sav")
 
 is.data.frame(testSpss) # yes
@@ -105,22 +129,35 @@ subsetSpss=testSpss[,varsNeeded] # rm(testSpss)??
 
 summary(subsetSpss$PERNP) #person earnings
 summary(subsetSpss$SEX) #person SEX
-summary(as.factor(subsetSpss$SEX)) #person SEX (1 male)
-tapply(subsetSpss$PERNP, as.factor(subsetSpss$SEX), mean,na.rm=T)
-t.test(subsetSpss$PERNP~ as.factor(subsetSpss$SEX))
 
-#equal means?
+# You can not get statistical summaries (by default)
+# if the text column is not tranformend into a categorical variable
+# or "factor" in R vocab.
+subsetSpss$SEX=as.factor(subsetSpss$SEX)
+summary(subsetSpss$SEX) #person SEX (1 male)
+
+#means by group:
+tapply(subsetSpss$PERNP, subsetSpss$SEX, mean,na.rm=T) # "T" important
+
+# are means equal?
+t.test(subsetSpss$PERNP~subsetSpss$SEX)
+
+#LET R ANSWER..are means equal- True or False?:
 t.test(subsetSpss$PERNP~ as.factor(subsetSpss$SEX))$p.value>0.05
 
+# LET'S GET AN STATA FILE
 testStata=read_dta("data/labdata.dta") # changed to version 13!
+
+# The data is in R now...just keep working!
 names(testStata)
 head(testStata)
 
+# a simple regression:
 lm(mpg~weight,data=testStata)
 
+#saving the regression
 results=lm(mpg~weight,data=testStata)
-summary(results)
-
+summary(results) #more details
 
 
 # I. Data Collection Stage  ----
@@ -133,7 +170,8 @@ summary(results)
 # I.1. Installing packages  ----
 # For that purpose, we will first INSTALL a 'package' that
 # that would make the scrapping process easier:
-install.packages("rvest")
+
+# install.packages("rvest")
 
 # I.2. Activating packages  ----
 # Installation only means that R has more functions, 
@@ -151,6 +189,8 @@ pressURL <- "https://en.wikipedia.org/wiki/Press_Freedom_Index"
 # from the page, and get a particular piece (node) once you have it.
 # As R mostly works sequentially, each step can be chained with the
 # symbol "%>%". The object to left of "<-" (or "=") will receive the output.
+
+# install.packages("magrittr")
 library(magrittr)
 
 urlTables <- pressURL %>% read_html %>% html_nodes("table")
@@ -251,7 +291,7 @@ for (value in pressDataDirty2016$press2016){
 }
 
 # we have...
-scores
+scores #?
 
 
 # Now let's create a data frame:
@@ -437,7 +477,7 @@ str(pressData)
 # an ISO code. 
 
 # I will need another file (external):
-isoPress=read.csv("pressKey.csv",na.strings = "",stringsAsFactors=F)
+isoPress=read.csv("data/pressKey.csv",na.strings = "",stringsAsFactors=F)
 
 names(isoPress) # what's here?
 
@@ -478,6 +518,7 @@ nameOfFilesToIntegrate # the name and the folder (full.names=TRUE)
 
 # apply "read.csv" to the filenames!...
 contentsAsList <- lapply(nameOfFilesToIntegrate, read.csv) # this works
+
 # BUT  this is better:
 contentsAsList <- lapply(nameOfFilesToIntegrate, read.csv,na.strings = "",stringsAsFactors=F)
 
@@ -658,7 +699,7 @@ allIndexesnoNA$cluster=clusterResult$cluster # add cluster to DF
 
 # Mapping Data
 library(maptools)
-map <- readShapeSpatial("data/worldMap/worldMap.shp")
+map <- readShapeSpatial("maps/worldMap.shp")
 names(map@data) # ISO3 is there!!
 
 # all.x=T is very important. You can not add rows to the map (all.x=T)
@@ -666,25 +707,33 @@ all=merge(map,allIndexesnoNA, by.x="ISO3", by.y="iso3",all.x=T)
 
 #version 1
 # ugly but informative
-quartz()
+
+# windows()
+# quartz()
 library(rgeos) # for "polygonsLabel"
 plot(all,col=all@data$cluster) #using cluster info to color!!
 polygonsLabel(all, labels=all@data$cluster,method = "inpolygon") # before naming cluster
 
 #version 2
+
+# windows()
+# quartz()
 colorCluster=c("green", "red", "lightblue")  # my new colors
 library(png)
-logo <- readPNG("data/logo.png") # just fancy stuff
+logo <- readPNG("pics/logo.png") # just fancy stuff
 quartz()
 plot(all,col=colorCluster[all@data$cluster],border=NA) 
 rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
 legend(legend = c("green","red","lightblue"), fill = colorCluster, "topright")
 
 #version2a
+
+# windows()
+# quartz()
 colorCluster=c("green", "red", "lightblue")
 colorClusterlegend=c("green", "lightblue","red") #order wanted in legend
 library(png)
-logo <- readPNG("data/logo.png")
+logo <- readPNG("pics/logo.png")
 quartz()
 plot(all,col=colorCluster[all@data$cluster],border=NA)
 rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
@@ -692,10 +741,12 @@ legend(legend = colorClusterlegend, fill = colorClusterlegend, "topright")
 
 
 #version 3
+# windows()
+# quartz()
 colorCluster=c("green", "red", "lightblue")
 colorClusterlegend=c("green", "lightblue","red")
 library(png)
-logo <- readPNG("data/logo.png")
+logo <- readPNG("pics/logo.png")
 quartz()
 plot(all,col=colorCluster[all@data$cluster],border=NA,main="Evans Categorization of World Development")
 rasterImage(logo, xleft=-159, ybottom = -47, xright = -80, ytop =-28)
@@ -707,6 +758,8 @@ map.scale(-12,-70,ratio=T, relwidth=0.2,metric=T,cex=0.5)
 levels(all@data$Region)
 CSamerica=all[all@data$Region %in% "South/Central \n America and \n Caribbean",]
 
+# windows()
+# quartz()
 plot(CSamerica,col=colorCluster[CSamerica@data$cluster],
      border="grey",
      main="Evans Categorization of World Development")
@@ -720,6 +773,7 @@ north.arrow(xb=-50, yb=-46, len=1, lab="N",col='grey')
 detach("package:GISTools", unload=TRUE)
 
 #More modern! - 1
+
 library(leaflet)
 
 # define colors
@@ -733,6 +787,7 @@ leaflet(CSamerica) %>%
   addPolygons(color = ~pal(idi2015),
               stroke = FALSE) 
 
+###############
 #More modern! - 2
 
 leaflet(CSamerica) %>%
@@ -745,7 +800,7 @@ leaflet(CSamerica) %>%
             opacity = 1
   )
 
-
+###############
 #More modern! - 3
 popup <- paste0("<strong>Country: </strong>", 
                 CSamerica@data$country,
@@ -761,5 +816,3 @@ leaflet(CSamerica) %>%
             labFormat = labelFormat(suffix = "#"),
             opacity = 1
   )
-
-
