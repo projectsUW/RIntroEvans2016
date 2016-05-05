@@ -654,18 +654,24 @@ boxplot(allIndexesNORM)
 boxplot(scale(allIndexes[,c(3,6,7)])) 
 
 # III.3 Exploring combinations ----
+
+##PLOT1
 Yvar=allIndexes$idi2015
 Xvar=allIndexes$ief2015
 plot(Xvar,Yvar)
 abline(lm(Yvar~Xvar), col="red",lwd=2) # regression line (lwd is width)
+##ENDPLOT1
 
+##PLOT2
 # more details:
 title="Relationship between InfoTech development \n and Press Freedom (2015)"
 YvarName="InfoTech"
 XvarName="Press Freedom"
 plot(Xvar,Yvar,xlab=XvarName,ylab=YvarName,main=title)
 abline(lm(Yvar~Xvar), col="red",lwd=2) # regression line (lwd is width)
+##ENDPLOT2
 
+##PLOT3
 #customizing colors I  WANT to use:
 mycols=c("red","lightblue","green","orange","magenta","black")
 
@@ -677,7 +683,9 @@ plot(Xvar,Yvar,col=mycols[allIndexes$Region],
 legend(x="topleft", legend = levels(allIndexes$Region), 
        col=mycols, pch=16) # add bty="n" at the end?
 
+##ENDPLOT3
 
+##PLOT4
 
 # time for the grammar of graphics
 library(ggplot2)
@@ -686,27 +694,42 @@ basicPlot <- ggplot(allIndexes, aes(ief2015, idi2015)) # first step
 #then...
 basicPlot  + geom_point() # you say HOW to plot
 
+##ENDPLOT4
+
+##PLOT5
 # MORE VARIETY:
 ## give color to point
 basicPlot  + geom_point((aes(colour = Region)))  
+##ENDPLOT5
 
+
+##PLOT6
 ## give color and size to point
 basicPlot  + geom_point((aes(colour = Region,size = press2015))) 
+##ENDPLOT6
 
+##PLOT7
 ## size of points and divide screen
 basicPlot  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) 
+##ENDPLOT7
 
+##PLOT8
 # VERSION just complete cases (no more warnings)
 allIndexesnoNA=allIndexes[complete.cases(allIndexes),]
 
 ##then...
 basicPlotNA <- ggplot(allIndexesnoNA, aes(ief2015, idi2015))
 basicPlotNA  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region)
+##ENDPLOT8
 
-
+##PLOT9
 # with grand mean: (check position of "+")
 basicPlotNA  + geom_point((aes(size = press2015))) +  facet_grid(. ~ Region) + 
                geom_hline(yintercept = mean(allIndexesnoNA$idi2015)) # this is NEW!!
+
+##ENDPLOT9
+
+##PLOT10
 
 ### more complex
 # want to plot the grand mean and the group mean!!
@@ -734,36 +757,46 @@ basicPlotNA  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) +
   geom_hline(yintercept = mean(allIndexesnoNA$idi2015)) +
   geom_hline(aes(yintercept =idi2015_means),means_IDI_facets) # this is new
 
+##ENDPLOT10
+
+
+##PLOT11
 # nicer:
 basicPlotNA  + geom_point(colour="darkorange",(aes(size = press2015))) + 
   facet_grid(. ~ Region) + 
   geom_hline(yintercept = mean(allIndexesnoNA$idi2015),col="red") +
   geom_hline(aes(yintercept =idi2015_means), means_IDI_facets,col="blue")
 
+##ENDPLOT11
 
 
-# IV. Basic Multivariate Analytics
+# IV. Basic Multivariate Analytics ----
 
-#clusters
+# clusters: find homogeneity using multiple variables
+
 ## Clustering works well with standardized data and without missing values: 
 allIndexesnoNA[,c(3,6,7)]=scale(allIndexesnoNA[,c(3,6,7)])
 
 # we want 3 clusters:
 clusterResult=kmeans(allIndexesnoNA[,c(3,6,7)],3)
 
-# add cluster to DF 
+# add cluster to our DataFrame
 allIndexesnoNA$cluster=clusterResult$cluster 
 
 head(allIndexesnoNA[,c(2,3,6,7,8)],10)
 
-# Mapping Data
+# IV.1 Mapping Data----
+
 ##install.packages("maptools)
 library(maptools)
 map <- readShapeSpatial("maps/worldMap.shp")
 names(map@data) # ISO3 is there!!
 
+# MERGE the previous data frame to map contents:
+
 # all.x=T is very important. You can not add rows to the map!
 all=merge(map,allIndexesnoNA, by.x="ISO3", by.y="iso3",all.x=T)
+
 
 # VERSION 1
 ## ugly but informative
@@ -773,8 +806,9 @@ library(rgeos) # for "polygonsLabel"
 plot(all,col=all@data$cluster) #using cluster info to color!!
 polygonsLabel(all, labels=all@data$cluster,method = "inpolygon") # before naming cluster
 
-# VERSION 2
 
+
+# VERSION 2
 # windows()
 # quartz()
 ### just fancy stuff
@@ -786,8 +820,7 @@ plot(all,col=colorCluster[all@data$cluster],border=NA)
 rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
 legend(legend = legendText, fill = colorCluster, "topright")
 
-# VERSION 2a
-
+# VERSION 3
 # windows()
 # quartz()
 colorCluster=c("green", "red", "lightblue")
@@ -801,7 +834,7 @@ rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
 legend(legend = legendText, fill = colorClusterlegend, "topright")
 
 
-# VERSION 3
+# VERSION 4
 # windows()
 # quartz()
 colorCluster=c("green", "red", "lightblue")
@@ -816,10 +849,13 @@ legend(x= -159, y= -49,legend = legendText, fill = colorClusterlegend,cex=0.6)
 library(maps)
 map.scale(-12,-70,ratio=T, relwidth=0.2,metric=T,cex=0.5)
 
-#subsetting the map
+
+## IV.2 Subsetting the map ----
+
 levels(all@data$Region)
 CSamerica=all[all@data$Region %in% "South/Central \n America and \n Caribbean",]
 
+# plotting subset 
 # windows()
 # quartz()
 plot(CSamerica,col=colorCluster[CSamerica@data$cluster],
@@ -833,6 +869,9 @@ map.scale(ratio=T, relwidth=0.2,metric=T,cex=0.5)
 library(GISTools)
 north.arrow(xb=-50, yb=-46, len=1, lab="N",col='grey')
 detach("package:GISTools", unload=TRUE) # bye GISTools
+
+
+#############
 
 # More MODERN! - 1
 
