@@ -433,7 +433,9 @@ head(pressDataCleanAll)
 ### Are we over???
 str(pressDataCleanAll)
 
-### Let's finish this using "lapply":
+### Let's finish this using "lapply".
+### lapply will apply a function to every column of a data frame
+
 pressDataCleanAll[,-c(1)]=lapply(pressDataCleanAll[,-c(1)], as.numeric)
 
 # HERE IT IS:
@@ -605,19 +607,26 @@ str(allIndexes)
 table(allIndexes$Region)
 
 # basic plot:
-barplot(table(allIndexes$Region))
-barplot(sort(table(allIndexes$Region)))
-barplot(sort(table(allIndexes$Region)),cex.names=0.3,las=2)
+barplot(table(allIndexes$Region)) #default
+barplot(sort(table(allIndexes$Region),decreasing = F)) #ordering by counts
+barplot(sort(table(allIndexes$Region)),
+        cex.names=0.3, #reducing size in 70%
+        las=2) # angle of text in axis
 
 # converting to factor for better plotting:
 allIndexes$Region=as.factor(allIndexes$Region)
 levels(allIndexes$Region)
-levels(allIndexes$Region)=c("Asia-Pacific","Europe","Middle East and \n North Africa",
-                            "North America", "South/Central \n America and \n Caribbean",
+# using '\n' for text to appear in new line:
+levels(allIndexes$Region)=c("Asia-Pacific","Europe",
+                            "Middle East and \n North Africa",
+                            "North America", 
+                            "South/Central \n America and \n Caribbean",
                             "Sub-Saharan \n Africa" )
 
+#then...
 barplot(sort(table(allIndexes$Region)),cex.names=0.5,las=2,col="red")
 
+#works here too:
 pie(table(allIndexes$Region))
 
 # III.2 Exploring numerical data ----
@@ -626,45 +635,78 @@ summary(allIndexes[,c(3,6,7)])
 
 boxplot(allIndexes[,c(3,6,7)])  # different Units!!
 
+# SOME options when facing different units:
+# Normalization
 library("scales")
-allIndexesNUM=lapply(allIndexes[,c(3,6,7)], rescale,to=c(0,1))
-boxplot(allIndexesNUM) # normalized
+# normalizing one variable:
+rescale(allIndexes[,3],to=c(0,1)) # good!
+# many...
+rescale(allIndexes[,c(3,6,7)],to=c(0,1)) # bad!
 
-boxplot(scale(allIndexes[,c(3,6,7)])) # standardized
+# 'rescale' works with one vector, so wee need
+# lapply to use this function in every column:
+allIndexesNORM=lapply(allIndexes[,c(3,6,7)], 
+                     rescale,to=c(0,1)) 
+#then...
+boxplot(allIndexesNORM) 
+
+# standardization:
+boxplot(scale(allIndexes[,c(3,6,7)])) 
 
 # III.3 Exploring combinations ----
+Yvar=allIndexes$idi2015
+Xvar=allIndexes$ief2015
+plot(Xvar,Yvar)
+abline(lm(Yvar~Xvar), col="red",lwd=2) # regression line (lwd is width)
 
-plot(allIndexes$ief2015,allIndexes$idi2015)
-plot(scale(allIndexes$ief2015),scale(allIndexes$idi2015))
+# more details:
+title="Relationship between InfoTech development \n and Press Freedom (2015)"
+YvarName="InfoTech"
+XvarName="Press Freedom"
+plot(Xvar,Yvar,xlab=XvarName,ylab=YvarName,main=title)
+abline(lm(Yvar~Xvar), col="red",lwd=2) # regression line (lwd is width)
 
-#setting colors I  WANT to use:
+#customizing colors I  WANT to use:
 mycols=c("red","lightblue","green","orange","magenta","black")
-plot(scale(allIndexes$ief2015),scale(allIndexes$idi2015),col=mycols,pch=16,xlab = "ief",ylab = "ict")
-legend(x="topleft", 
-       legend = levels(allIndexes$Region), 
-       col=mycols, pch=16,cex=0.5)
+
+# then...
+#windows()
+#quartz()
+plot(Xvar,Yvar,col=mycols[allIndexes$Region],
+     pch=16) # different symbol
+legend(x="topleft", legend = levels(allIndexes$Region), 
+       col=mycols, pch=16) # add bty="n" at the end?
+
+
 
 # time for the grammar of graphics
 library(ggplot2)
-basicPlot <- ggplot(allIndexes, aes(ief2015, idi2015)) # you say what to use
+basicPlot <- ggplot(allIndexes, aes(ief2015, idi2015)) # first step
 
-#see it
+#then...
 basicPlot  + geom_point() # you say HOW to plot
 
-#more variety
-basicPlot  + geom_point((aes(colour = Region)))  # give color to point
-basicPlot  + geom_point((aes(colour = Region,size = press2015))) # give color and size to point
-basicPlot  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) # size and divide
+# MORE VARIETY:
+## give color to point
+basicPlot  + geom_point((aes(colour = Region)))  
 
-# version just complete cases (no more warnings)
+## give color and size to point
+basicPlot  + geom_point((aes(colour = Region,size = press2015))) 
+
+## size of points and divide screen
+basicPlot  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) 
+
+# VERSION just complete cases (no more warnings)
 allIndexesnoNA=allIndexes[complete.cases(allIndexes),]
+
+##then...
 basicPlotNA <- ggplot(allIndexesnoNA, aes(ief2015, idi2015))
 basicPlotNA  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region)
 
 
-# with grand mean:
+# with grand mean: (check position of "+")
 basicPlotNA  + geom_point((aes(size = press2015))) +  facet_grid(. ~ Region) + 
-               geom_hline(yintercept = mean(na.omit(allIndexes$idi2015))) # this is NEW!!
+               geom_hline(yintercept = mean(allIndexesnoNA$idi2015)) # this is NEW!!
 
 ### more complex
 # want to plot the grand mean and the group mean!!
@@ -674,83 +716,103 @@ means_IDI_facets <- tapply(allIndexesnoNA$idi2015,allIndexesnoNA$Region,mean)
 
 #transform as data frame
 means_IDI_facets=as.data.frame(means_IDI_facets)
-names(means_IDI_facets)=c("idi2015_facets") #change name
-means_IDI_facets$Region <- as.factor(rownames(means_IDI_facets)) #index as column
+
+#see what you have:
+means_IDI_facets
+
+# the index names are the region!...
+# so turn them into a column:
+means_IDI_facets$Region <- as.factor(rownames(means_IDI_facets)) 
 rownames(means_IDI_facets) <- NULL #erase old index
+means_IDI_facets
+
+#rename column of means: (pick a name!)
+names(means_IDI_facets)[1]=c("idi2015_means") 
 
 # now plot!
 basicPlotNA  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) + 
   geom_hline(yintercept = mean(allIndexesnoNA$idi2015)) +
-  geom_hline(aes(yintercept =idi2015_facets),means_IDI_facets) # this is new
+  geom_hline(aes(yintercept =idi2015_means),means_IDI_facets) # this is new
 
 # nicer:
-basicPlotNA  + geom_point((aes(size = press2015))) + facet_grid(. ~ Region) + 
+basicPlotNA  + geom_point(colour="darkorange",(aes(size = press2015))) + 
+  facet_grid(. ~ Region) + 
   geom_hline(yintercept = mean(allIndexesnoNA$idi2015),col="red") +
-  geom_hline(aes(yintercept =idi2015_facets), means_IDI_facets,col="blue")
+  geom_hline(aes(yintercept =idi2015_means), means_IDI_facets,col="blue")
 
 
 
 # IV. Basic Multivariate Analytics
 
 #clusters
+## Clustering works well with standardized data and without missing values: 
 allIndexesnoNA[,c(3,6,7)]=scale(allIndexesnoNA[,c(3,6,7)])
+
+# we want 3 clusters:
 clusterResult=kmeans(allIndexesnoNA[,c(3,6,7)],3)
-allIndexesnoNA$cluster=clusterResult$cluster # add cluster to DF
+
+# add cluster to DF 
+allIndexesnoNA$cluster=clusterResult$cluster 
+
+head(allIndexesnoNA[,c(2,3,6,7,8)],10)
 
 # Mapping Data
+##install.packages("maptools)
 library(maptools)
 map <- readShapeSpatial("maps/worldMap.shp")
 names(map@data) # ISO3 is there!!
 
-# all.x=T is very important. You can not add rows to the map (all.x=T)
+# all.x=T is very important. You can not add rows to the map!
 all=merge(map,allIndexesnoNA, by.x="ISO3", by.y="iso3",all.x=T)
 
-#version 1
-# ugly but informative
-
+# VERSION 1
+## ugly but informative
 # windows()
 # quartz()
 library(rgeos) # for "polygonsLabel"
 plot(all,col=all@data$cluster) #using cluster info to color!!
 polygonsLabel(all, labels=all@data$cluster,method = "inpolygon") # before naming cluster
 
-#version 2
+# VERSION 2
 
 # windows()
 # quartz()
-colorCluster=c("green", "red", "lightblue")  # my new colors
+### just fancy stuff
 library(png)
-logo <- readPNG("pics/logo.png") # just fancy stuff
-quartz()
+logo <- readPNG("pics/logo.png") 
+colorCluster=c("green", "red", "lightblue")  # my new colors
+legendText=c("A","B","C")
 plot(all,col=colorCluster[all@data$cluster],border=NA) 
 rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
-legend(legend = c("green","red","lightblue"), fill = colorCluster, "topright")
+legend(legend = legendText, fill = colorCluster, "topright")
 
-#version2a
+# VERSION 2a
 
 # windows()
 # quartz()
 colorCluster=c("green", "red", "lightblue")
 colorClusterlegend=c("green", "lightblue","red") #order wanted in legend
+legendText=c("A","B","C")
 library(png)
 logo <- readPNG("pics/logo.png")
 quartz()
 plot(all,col=colorCluster[all@data$cluster],border=NA)
 rasterImage(logo, xleft=-159, ybottom = -49, xright = -80, ytop =-30)
-legend(legend = colorClusterlegend, fill = colorClusterlegend, "topright")
+legend(legend = legendText, fill = colorClusterlegend, "topright")
 
 
-#version 3
+# VERSION 3
 # windows()
 # quartz()
 colorCluster=c("green", "red", "lightblue")
 colorClusterlegend=c("green", "lightblue","red")
+legendText=c("A","B","C")
 library(png)
 logo <- readPNG("pics/logo.png")
-quartz()
+
 plot(all,col=colorCluster[all@data$cluster],border=NA,main="Evans Categorization of World Development")
 rasterImage(logo, xleft=-159, ybottom = -47, xright = -80, ytop =-28)
-legend(x= -159, y= -49,legend = colorClusterlegend, fill = colorClusterlegend,cex=0.6)
+legend(x= -159, y= -49,legend = legendText, fill = colorClusterlegend,cex=0.6)
 library(maps)
 map.scale(-12,-70,ratio=T, relwidth=0.2,metric=T,cex=0.5)
 
@@ -765,34 +827,34 @@ plot(CSamerica,col=colorCluster[CSamerica@data$cluster],
      main="Evans Categorization of World Development")
 mtext("Caribbean, Central and South America")
 polygonsLabel(CSamerica, labels=CSamerica@data$country,method = "inpolygon",cex=0.5)
-legend("left",legend = colorClusterlegend, fill = colorClusterlegend,cex=0.6)
+legend("left",legend = legendText, fill = colorClusterlegend,cex=0.6)
 library(maps)
 map.scale(ratio=T, relwidth=0.2,metric=T,cex=0.5)
 library(GISTools)
 north.arrow(xb=-50, yb=-46, len=1, lab="N",col='grey')
-detach("package:GISTools", unload=TRUE)
+detach("package:GISTools", unload=TRUE) # bye GISTools
 
-#More modern! - 1
+# More MODERN! - 1
 
 library(leaflet)
 
 # define colors
 pal <- colorNumeric(
-  palette = "Blues",
-  domain = CSamerica@data$idi2015
+  palette = "Reds", #colors chosen
+  domain = all@data$idi2015
 )
 #plot
-leaflet(CSamerica) %>%
+leaflet(all) %>%
   addTiles() %>%
   addPolygons(color = ~pal(idi2015),
-              stroke = FALSE) 
+              stroke = F) 
 
 ###############
-#More modern! - 2
+#More MODERN! - 2
 
-leaflet(CSamerica) %>%
+leaflet(all) %>%
   addTiles() %>%
-  addPolygons(color = ~pal(idi2015),
+  addPolygons(fillColor = ~pal(idi2015),
               stroke = FALSE) %>%
   addLegend("bottomright", pal = pal, values = ~idi2015,
             title = "ICT Index",
@@ -801,7 +863,7 @@ leaflet(CSamerica) %>%
   )
 
 ###############
-#More modern! - 3
+#More MODERN! - 3
 popup <- paste0("<strong>Country: </strong>", 
                 CSamerica@data$country,
                 "<br><strong> ICT Index: </strong>", 
